@@ -62,7 +62,7 @@ function writeMessageImpl(s,d) {
 }
 exports.writeMessageImpl = writeMessageImpl;
 
-function createConnectionImpl(o) {
+function connectToServerImpl(o) {
   return require('net').createConnection(o);
 }
-exports.createConnectionImpl = createConnectionImpl;
+exports.connectToServerImpl = connectToServerImpl;

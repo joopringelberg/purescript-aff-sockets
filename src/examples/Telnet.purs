@@ -16,7 +16,7 @@ module Telnet where
 
 import Prelude
 
-import Control.Aff.Sockets (Connection, SocketEffects, ConnectionProcess, createConnection, defaultTCPOptions, messageProducer, writeMessage)
+import Control.Aff.Sockets (Connection, SocketEffects, ConnectionProcess, connectToServer, defaultTCPOptions, messageProducer, writeMessage)
 import Control.Coroutine (Consumer, await, runProcess, ($$))
 import Control.Monad.Aff (Aff, launchAff, runAff)
 import Control.Monad.Aff.Console (log, CONSOLE)
@@ -32,7 +32,7 @@ type TelnetEffects e = SocketEffects (readline :: READLINE, console :: CONSOLE |
 
 main :: forall e. Eff (TelnetEffects e) Unit
 main = void $ launchAff do
-  connection <- createConnection defaultTCPOptions
+  connection <- connectToServer defaultTCPOptions
   createInterfaceAff connection
   runProcess $ client connection
 

@@ -46,10 +46,10 @@ connectionProducer options = produce (createConnectionEmitter options)
 ----------------------------------------------------------------------------------------
 ---- CONNECT TO SERVER
 ----------------------------------------------------------------------------------------
-foreign import createConnectionImpl :: forall eff opts. EffFn1 (SocketEffects eff) (TCPOptions opts) Connection
+foreign import connectToServerImpl :: forall eff opts. EffFn1 (SocketEffects eff) (TCPOptions opts) Connection
 
-createConnection :: forall eff opts. TCPOptions opts -> Aff (SocketEffects eff) Connection
-createConnection = liftEff <<< runEffFn1 createConnectionImpl
+connectToServer :: forall eff opts. TCPOptions opts -> Aff (SocketEffects eff) Connection
+connectToServer = liftEff <<< runEffFn1 connectToServerImpl
 
 ----------------------------------------------------------------------------------------
 ---- A PRODUCER OF MESSAGES OVER A CONNECTION
