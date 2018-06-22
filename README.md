@@ -1,20 +1,10 @@
 # purescript-aff-coroutines
 
-[![Latest release](http://img.shields.io/bower/v/purescript-aff-coroutines.svg)](https://github.com/purescript-contrib/purescript-aff-coroutines/releases)
-[![Build status](https://travis-ci.org/purescript-contrib/purescript-aff-coroutines.svg?branch=master)](https://travis-ci.org/purescript-contrib/purescript-aff-coroutines)
-[![Dependency status](https://img.shields.io/librariesio/github/purescript-contrib/purescript-aff-coroutines.svg)](https://libraries.io/github/purescript-contrib/purescript-aff-coroutines)
-[![Maintainer: paf31](https://img.shields.io/badge/maintainer-paf31-lightgrey.svg)](http://github.com/paf31)
-
-Helper functions for creating coroutines with the Aff monad.
+Functions to manage TCP Sockets based on the Node JS Net module in Aff.
 
 ## Getting started
 
-``` purescript
-bower install purescript-aff-coroutines
-```
 
-[See the tests](https://github.com/purescript-contrib/purescript-aff-coroutines/blob/master/test/Main.purs) for some example usages.
+[See the examples](https://github.com/joopringelberg/purescript-aff-sockets/tree/master/src/examples) for a simple echo server and a Telnet-like client.
 
 ## Module documentation
-
-Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-aff-coroutines).

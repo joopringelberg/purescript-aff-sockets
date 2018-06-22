@@ -1,15 +1,15 @@
 {-
 Use this module's main function as a substitute for Telnet.
 In other words, it functions as a client that connects to a given server.
-Casu quo, use the server that is in Echo.purs. Provide the same arguments for host and port:
+Connect to the server that is in echo.purs (with default localhost and 7777):
 
   $pulp run --main Telnet
 
-while the server can be started (with default localhost and 7777) by just this:
+while the server can be started like this:
 
   $pulp run
 
-The telnet function provides for a line reader that you can type into. The value will be echo'd by the echo server, with a vengeance!
+The telnet function provides for a line reader that you can type into. The value will be echo'd by the echo server, adding the number of characters received.
 -}
 
 module Telnet where
