@@ -24,17 +24,45 @@ function createConnectionEmitterImpl(left, right, options, emit)
 exports.createConnectionEmitterImpl = createConnectionEmitterImpl;
 
 
-function createMessageEmitterImpl(left, right, event, connection, emit)
+function createMessageEmitterImpl(left, right, connection, emit)
 {
-  connection.on(event,
+  connection.on("data",
     function(a)
     {
       emit(left(a))();
     });
+  connection.on('error',
+    function(error)
+    {
+      // Show or log the error.
+      connection.close(function()
+        {
+          // show or log that the connection is fully closed.
+        });
+      // Finish the producer.
+      emit(right({}))();
+    });
+  connection.on('end',
+    function()
+    {
+      // Finish the producer.
+      emit(right({}))();
+    });
+  connection.on('close',
+    function()
+    {
+      // Finish the producer.
+      emit(right({}))();
+    });
 }
 exports.createMessageEmitterImpl = createMessageEmitterImpl;
 
-function writeMessageImpl_(s,d) {
+function writeMessageImpl(s,d) {
   return function() { return s.write(d); };
 }
 exports.writeMessageImpl = writeMessageImpl;
+
+function createConnectionImpl(o) {
+  return require('net').createConnection(o);
+}
+exports.createConnectionImpl = createConnectionImpl;

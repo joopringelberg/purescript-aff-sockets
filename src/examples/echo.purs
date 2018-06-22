@@ -9,10 +9,7 @@ import Data.String (length)
 import Prelude (Unit, ($), void, (<>), show)
 
 main :: forall e. Eff (SocketEffects e) Unit
-main = echo
-
-echo :: forall e. Eff (SocketEffects e) Unit
-echo = void $ launchAff $ runProcess server
+main = void $ launchAff $ runProcess server
   where
 
     server :: Process (Aff (SocketEffects e)) Unit

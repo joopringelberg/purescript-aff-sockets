@@ -5,6 +5,7 @@
   "depends": [
     "prelude",
     "aff",
-    "aff-coroutines"
+    "aff-coroutines",
+    "node-readline"
   ]
 }
