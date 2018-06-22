@@ -1,20 +1,29 @@
 module Main where
 
-
-import Control.Aff.Sockets (Host, Port, SOCKETIO, TCPOptions, connectionProducer, consumeConnection, defaultTCPOptions)
-import Control.Coroutine (runProcess, ($$))
-import Control.Monad.Aff (launchAff)
+import Control.Aff.Sockets (ConnectionProcess, SocketEffects, connectionConsumer, connectionProducer, defaultTCPOptions, messageConsumer, messageProducer)
+import Control.Coroutine (Process, Transformer, runProcess, transform, ($$), ($~))
+import Control.Monad.Aff (Aff, launchAff)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.AVar (AVAR)
-import Control.Monad.Eff.Console (CONSOLE)
-import Control.Monad.Eff.Exception (EXCEPTION)
-import Prelude (Unit, ($), void)
+import Control.Monad.Rec.Class (forever)
+import Data.String (length)
+import Prelude (Unit, ($), void, (<>), show)
 
-main :: forall e. Eff (exception :: EXCEPTION, console :: CONSOLE, socketio :: SOCKETIO, avar :: AVAR | e) Unit
-main = echoLight "localhost" 7777
+main :: forall e. Eff (SocketEffects e) Unit
+main = echo
 
-echoLight :: forall e. Host -> Port -> Eff (exception :: EXCEPTION, console :: CONSOLE, socketio :: SOCKETIO, avar :: AVAR | e) Unit
-echoLight host port = void $ launchAff $ runProcess (connectionProducer options $$ consumeConnection)
+echo :: forall e. Eff (SocketEffects e) Unit
+echo = void $ launchAff $ runProcess server
   where
-    options :: TCPOptions
-    options = defaultTCPOptions {host = host, port = port}
+
+    server :: Process (Aff (SocketEffects e)) Unit
+    server = (connectionProducer defaultTCPOptions) $$ (connectionConsumer connectionHandler)
+
+    connectionHandler :: ConnectionProcess e
+    connectionHandler connection =
+      ((messageProducer connection) $~ countingCharacters) $$ (messageConsumer connection)
+
+    countingCharacters :: Transformer String String (Aff (SocketEffects e)) Unit
+    countingCharacters = forever (transform f)
+      where
+        f :: String -> String
+        f s = s <> " (" <> show (length s) <> " karakters)"

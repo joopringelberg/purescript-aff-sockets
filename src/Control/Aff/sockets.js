@@ -24,7 +24,7 @@ function createConnectionEmitterImpl(left, right, options, emit)
 exports.createConnectionEmitterImpl = createConnectionEmitterImpl;
 
 
-function createStringEmitterImpl(left, right, event, connection, emit)
+function createMessageEmitterImpl(left, right, event, connection, emit)
 {
   connection.on(event,
     function(a)
@@ -32,9 +32,9 @@ function createStringEmitterImpl(left, right, event, connection, emit)
       emit(left(a))();
     });
 }
-exports.createStringEmitterImpl = createStringEmitterImpl;
+exports.createMessageEmitterImpl = createMessageEmitterImpl;
 
-function writeImpl_(s,d) {
+function writeMessageImpl_(s,d) {
   return function() { return s.write(d); };
 }
-exports.writeImpl_ = writeImpl_;
+exports.writeMessageImpl = writeMessageImpl;
