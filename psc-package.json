@@ -6,6 +6,7 @@
     "prelude",
     "aff",
     "aff-coroutines",
-    "node-readline"
+    "node-readline",
+    "foreign-generic"
   ]
 }

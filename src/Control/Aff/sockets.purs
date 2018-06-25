@@ -1,16 +1,21 @@
 module Control.Aff.Sockets where
 
-import Control.Coroutine (Consumer, Producer, Process, await, runProcess)
+import Control.Coroutine (Consumer, Process, Producer, await, runProcess, transform, ($~))
 import Control.Coroutine.Aff (produce)
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.AVar (AVAR)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Uncurried (EffFn1, EffFn4, runEffFn1, runEffFn4)
+import Control.Monad.Except (runExcept)
 import Control.Monad.Rec.Class (forever)
 import Control.Monad.Trans.Class (lift)
-import Data.Either (Either(..))
+import Data.Either (Either(..), fromRight)
+import Data.Foreign (MultipleErrors)
+import Data.Foreign.Class (class Decode, class Encode)
+import Data.Foreign.Generic (decodeJSON, encodeJSON)
 import Data.Function.Uncurried (Fn2, runFn2)
+import Partial.Unsafe (unsafePartial)
 import Prelude (Unit, bind, void, ($), (<<<))
 
 foreign import data SOCKETIO :: Effect
@@ -32,7 +37,10 @@ defaultTCPOptions = {port: 7777, host: "localhost", allowHalfOpen: false}
 type EmitFunction a r eff = (Either a r -> Eff (avar :: AVAR | eff) Unit)
 type Emitter a r eff = EmitFunction a r eff -> Eff (avar :: AVAR | eff) Unit
 
-foreign import createConnectionEmitterImpl :: forall eff opts. EffFn4 (avar :: AVAR | eff) (Connection -> Either Connection Unit) (Unit -> Either Connection Unit) (TCPOptions opts) (EmitFunction Connection Unit eff) Unit
+type Left a = a -> Either a Unit
+type Right a = Unit -> Either a Unit
+
+foreign import createConnectionEmitterImpl :: forall eff opts. EffFn4 (avar :: AVAR | eff) (Left Connection) (Right Connection) (TCPOptions opts) (EmitFunction Connection Unit eff) Unit
 
 -- createConnectionEmitter :: forall eff. TCPOptions
   -- -> (EmitFunction Connection Unit eff) -> Eff (avar :: AVAR | eff) Unit
@@ -54,7 +62,7 @@ connectToServer = liftEff <<< runEffFn1 connectToServerImpl
 ----------------------------------------------------------------------------------------
 ---- A PRODUCER OF MESSAGES OVER A CONNECTION
 ----------------------------------------------------------------------------------------
-foreign import createMessageEmitterImpl :: forall eff. EffFn4 (avar :: AVAR | eff) (String -> Either String Unit) (Unit -> Either String Unit) Connection (EmitFunction String Unit eff) Unit
+foreign import createMessageEmitterImpl :: forall eff. EffFn4 (avar :: AVAR | eff) (Left String) (Right String) Connection (EmitFunction String Unit eff) Unit
 
 createMessageEmitter :: forall eff. Connection -> Emitter String Unit eff
 createMessageEmitter = runEffFn4 createMessageEmitterImpl Left Right
@@ -84,3 +92,19 @@ connectionConsumer :: forall eff. ConnectionProcess eff -> Consumer Connection (
 connectionConsumer process = forever do
   connection <- await
   void $ lift $ runProcess (process connection)
+
+----------------------------------------------------------------------------------------
+---- PRODUCING AND CONSUMING AN ADT OVER A CONNECTION
+----------------------------------------------------------------------------------------
+-- | From a connection, produce instances of a, or possibly a list of de-serialisation errors.
+dataProducer :: forall eff a. Decode a => Connection -> Producer (Either MultipleErrors a) (Aff (SocketEffects eff)) Unit
+dataProducer connection = (messageProducer connection) $~ (transform (runExcept <<< decodeJSON))
+
+dataConsumer :: forall eff a. Encode a => Connection -> Consumer a (Aff (SocketEffects eff)) Unit
+dataConsumer connection = forever do
+  message <- await
+  void $ lift $ writeMessage connection (encodeJSON message)
+
+-- From a connection, produce instances of a. An uninformative error will be thrown if deserialisation fails.
+dataProducer_ :: forall eff a. Decode a => Connection -> Producer a (Aff (SocketEffects eff)) Unit
+dataProducer_ connection = (messageProducer connection) $~ (transform (unsafePartial $ fromRight <<< runExcept <<< decodeJSON))
