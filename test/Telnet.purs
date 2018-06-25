@@ -3,11 +3,11 @@ Use this module's main function as a substitute for Telnet.
 In other words, it functions as a client that connects to a given server.
 Connect to the server that is in echo.purs (with default localhost and 7777):
 
-  $pulp run --main Telnet
+  $pulp test --main Telnet
 
 while the server can be started like this:
 
-  $pulp run
+  $pulp test
 
 The telnet function provides for a line reader that you can type into. The value will be echo'd by the echo server, adding the number of characters received.
 -}

@@ -1,4 +1,4 @@
-module Main where
+module Test.Main where
 
 import Control.Aff.Sockets (ConnectionProcess, SocketEffects, connectionConsumer, connectionProducer, defaultTCPOptions, messageConsumer, messageProducer)
 import Control.Coroutine (Process, Transformer, runProcess, transform, ($$), ($~))
