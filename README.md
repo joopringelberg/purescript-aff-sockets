@@ -1,4 +1,4 @@
-# purescript-aff-coroutines
+# purescript-aff-sockets
 
 Functions to manage TCP Sockets based on the Node JS Net module in Aff.
 

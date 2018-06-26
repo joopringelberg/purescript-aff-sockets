@@ -15,7 +15,7 @@ main = void $ launchAff $ runProcess server
     server :: Process (Aff (SocketEffects e)) Unit
     server = (connectionProducer defaultTCPOptions) $$ (connectionConsumer connectionHandler)
 
-    connectionHandler :: ConnectionProcess e
+    connectionHandler :: ConnectionProcess (Aff (SocketEffects e))
     connectionHandler connection =
       ((messageProducer connection) $~ countingCharacters) $$ (messageConsumer connection)
 

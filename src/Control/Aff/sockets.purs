@@ -1,15 +1,17 @@
 module Control.Aff.Sockets where
 
 import Control.Coroutine (Consumer, Process, Producer, await, runProcess, transform, ($~))
-import Control.Coroutine.Aff (produce)
+import Control.Coroutine.Aff (produce')
 import Control.Monad.Aff (Aff)
+import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.AVar (AVAR)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Uncurried (EffFn1, EffFn4, runEffFn1, runEffFn4)
 import Control.Monad.Except (runExcept)
-import Control.Monad.Rec.Class (forever)
+import Control.Monad.Rec.Class (class MonadRec, forever)
 import Control.Monad.Trans.Class (lift)
+import Control.Parallel (class Parallel)
 import Data.Either (Either(..), fromRight)
 import Data.Foreign (MultipleErrors)
 import Data.Foreign.Class (class Decode, class Encode)
@@ -48,15 +50,16 @@ createConnectionEmitter :: forall eff opts. TCPOptions opts -> Emitter Connectio
 createConnectionEmitter = runEffFn4 createConnectionEmitterImpl Left Right
 
 -- A Producer for Connections.
-connectionProducer :: forall eff opts. TCPOptions opts -> Producer Connection (Aff (avar :: AVAR | eff)) Unit
-connectionProducer options = produce (createConnectionEmitter options)
+connectionProducer :: forall eff opts m. MonadAff (avar :: AVAR | eff) m =>
+  TCPOptions opts -> Producer Connection m Unit
+connectionProducer options = produce' (createConnectionEmitter options)
 
 ----------------------------------------------------------------------------------------
 ---- CONNECT TO SERVER
 ----------------------------------------------------------------------------------------
 foreign import connectToServerImpl :: forall eff opts. EffFn1 (SocketEffects eff) (TCPOptions opts) Connection
 
-connectToServer :: forall eff opts. TCPOptions opts -> Aff (SocketEffects eff) Connection
+connectToServer :: forall eff opts m. MonadAff (SocketEffects eff) m => TCPOptions opts -> m Connection
 connectToServer = liftEff <<< runEffFn1 connectToServerImpl
 
 ----------------------------------------------------------------------------------------
@@ -67,18 +70,20 @@ foreign import createMessageEmitterImpl :: forall eff. EffFn4 (avar :: AVAR | ef
 createMessageEmitter :: forall eff. Connection -> Emitter String Unit eff
 createMessageEmitter = runEffFn4 createMessageEmitterImpl Left Right
 
-messageProducer :: forall eff. Connection -> Producer String (Aff (SocketEffects eff)) Unit
-messageProducer connection = produce (createMessageEmitter connection)
+messageProducer :: forall eff m. MonadAff (SocketEffects eff) m =>
+  Connection -> Producer String m Unit
+messageProducer connection = produce' (createMessageEmitter connection)
 
 ----------------------------------------------------------------------------------------
 ---- A CONSUMER OF MESSAGES OVER A CONNECTION
 ----------------------------------------------------------------------------------------
 foreign import writeMessageImpl :: forall eff. Fn2 Connection String (Eff (SocketEffects eff) Boolean)
 
-writeMessage :: forall eff. Connection -> String -> Aff (SocketEffects eff) Boolean
+writeMessage :: forall eff m. MonadAff (SocketEffects eff) m => Connection -> String -> m Boolean
 writeMessage c m = liftEff $ (runFn2 writeMessageImpl c m)
 
-messageConsumer :: forall eff. Connection -> Consumer String (Aff (SocketEffects eff)) Unit
+messageConsumer :: forall eff m. MonadAff (SocketEffects eff) m =>
+  Connection -> Consumer String m Unit
 messageConsumer connection = forever do
   message <- await
   void $ lift $ writeMessage connection message
@@ -86,9 +91,12 @@ messageConsumer connection = forever do
 ----------------------------------------------------------------------------------------
 ---- A CONNECTIONCONSUMER
 ----------------------------------------------------------------------------------------
-type ConnectionProcess e = Connection -> Process (Aff (SocketEffects e)) Unit
+type ConnectionProcess m = Connection -> Process m Unit
 
-connectionConsumer :: forall eff. ConnectionProcess eff -> Consumer Connection (Aff (SocketEffects eff)) Unit
+connectionConsumer :: forall eff m.
+  MonadAff (SocketEffects eff) m =>
+  MonadRec m =>
+  ConnectionProcess m -> Consumer Connection m Unit
 connectionConsumer process = forever do
   connection <- await
   void $ lift $ runProcess (process connection)
@@ -97,14 +105,27 @@ connectionConsumer process = forever do
 ---- PRODUCING AND CONSUMING AN ADT OVER A CONNECTION
 ----------------------------------------------------------------------------------------
 -- | From a connection, produce instances of a, or possibly a list of de-serialisation errors.
-dataProducer :: forall eff a. Decode a => Connection -> Producer (Either MultipleErrors a) (Aff (SocketEffects eff)) Unit
+dataProducer :: forall eff a m f.
+  Decode a =>
+  MonadAff (SocketEffects eff) m =>
+  MonadRec m =>
+  Parallel f m =>
+  Connection -> Producer (Either MultipleErrors a) m Unit
 dataProducer connection = (messageProducer connection) $~ (transform (runExcept <<< decodeJSON))
 
-dataConsumer :: forall eff a. Encode a => Connection -> Consumer a (Aff (SocketEffects eff)) Unit
+dataConsumer :: forall eff a m.
+  Encode a =>
+  MonadAff (SocketEffects eff) m =>
+  Connection -> Consumer a m Unit
 dataConsumer connection = forever do
   message <- await
   void $ lift $ writeMessage connection (encodeJSON message)
 
 -- From a connection, produce instances of a. An uninformative error will be thrown if deserialisation fails.
-dataProducer_ :: forall eff a. Decode a => Connection -> Producer a (Aff (SocketEffects eff)) Unit
+dataProducer_ :: forall eff a m f.
+  Decode a =>
+  MonadAff (SocketEffects eff) m =>
+  MonadRec m =>
+  Parallel f m =>
+  Connection -> Producer a m Unit
 dataProducer_ connection = (messageProducer connection) $~ (transform (unsafePartial $ fromRight <<< runExcept <<< decodeJSON))

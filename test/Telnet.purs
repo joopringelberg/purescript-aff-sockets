@@ -38,7 +38,7 @@ main = void $ launchAff do
 
   where
 
-    client :: ConnectionProcess (readline :: READLINE, console :: CONSOLE | e)
+    client :: ConnectionProcess (Aff (TelnetEffects e))
     client connection =
       (messageProducer connection) $$ consumeMessageAndShow
 
