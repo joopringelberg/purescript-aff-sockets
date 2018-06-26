@@ -113,13 +113,16 @@ dataProducer :: forall eff a m f.
   Connection -> Producer (Either MultipleErrors a) m Unit
 dataProducer connection = (messageProducer connection) $~ (transform (runExcept <<< decodeJSON))
 
+writeData :: forall eff m a. Encode a => MonadAff (SocketEffects eff) m => Connection -> a -> m Boolean
+writeData c d = liftEff $ (runFn2 writeMessageImpl c (encodeJSON d))
+
 dataConsumer :: forall eff a m.
   Encode a =>
   MonadAff (SocketEffects eff) m =>
   Connection -> Consumer a m Unit
 dataConsumer connection = forever do
-  message <- await
-  void $ lift $ writeMessage connection (encodeJSON message)
+  dt <- await
+  void $ lift $ writeData connection dt
 
 -- From a connection, produce instances of a. An uninformative error will be thrown if deserialisation fails.
 dataProducer_ :: forall eff a m f.
