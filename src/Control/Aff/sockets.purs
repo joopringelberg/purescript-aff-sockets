@@ -2,7 +2,6 @@ module Control.Aff.Sockets where
 
 import Control.Coroutine (Consumer, Process, Producer, await, runProcess, transform, ($~))
 import Control.Coroutine.Aff (produce')
-import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.AVar (AVAR)
