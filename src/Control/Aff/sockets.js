@@ -39,19 +39,22 @@ function createMessageEmitterImpl(connection, emit)
       connection.close(function()
         {
           // show or log that the connection is fully closed.
+          // Finish the producer.
+          emit("shutdown")();
         });
-      // Finish the producer.
-      emit("shutdown")();
     });
   connection.on('end',
     function()
     {
-      // Finish the producer.
-      emit("shutdown")();
+      // Emitted when the other end of the socket sends a FIN packet.
+      // By default (allowHalfOpen == false) the socket will destroy its file
+      // descriptor once it has written out its pending write queue.
+      // Hence, we need not signal the server that this message emitter shuts down.
     });
   connection.on('close',
     function()
     {
+      // Emitted once the socket is fully closed.
       // Finish the producer.
       emit("shutdown")();
     });
