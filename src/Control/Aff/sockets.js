@@ -1,13 +1,14 @@
 function createConnectionEmitterImpl(left, right, options, emit)
 {
-  var server = require('net').createServer(options);
+  const server = require('net').createServer(options);
+
   // Make the server accept connections.
   server.listen(options.port, options.host);
   // Return a new connection.
   server.on('connection',
     function(connection)
     {
-      var c = emit( left(connection) )();
+      emit( left(connection) )();
     });
   server.on('error',
     function( error )
@@ -24,12 +25,12 @@ function createConnectionEmitterImpl(left, right, options, emit)
 exports.createConnectionEmitterImpl = createConnectionEmitterImpl;
 
 
-function createMessageEmitterImpl(left, right, connection, emit)
+function createMessageEmitterImpl(connection, emit)
 {
   connection.on("data",
     function(a)
     {
-      emit(left(a))();
+      emit(a + "")();
     });
   connection.on('error',
     function(error)
@@ -40,19 +41,19 @@ function createMessageEmitterImpl(left, right, connection, emit)
           // show or log that the connection is fully closed.
         });
       // Finish the producer.
-      emit(right({}))();
+      emit("shutdown")();
     });
   connection.on('end',
     function()
     {
       // Finish the producer.
-      emit(right({}))();
+      emit("shutdown")();
     });
   connection.on('close',
     function()
     {
       // Finish the producer.
-      emit(right({}))();
+      emit("shutdown")();
     });
 }
 exports.createMessageEmitterImpl = createMessageEmitterImpl;

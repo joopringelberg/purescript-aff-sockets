@@ -6,7 +6,7 @@ import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.AVar (AVAR)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Uncurried (EffFn1, EffFn4, runEffFn1, runEffFn4)
+import Control.Monad.Eff.Uncurried (EffFn1, EffFn2, EffFn4, runEffFn1, runEffFn2, runEffFn4)
 import Control.Monad.Except (runExcept)
 import Control.Monad.Rec.Class (class MonadRec, forever)
 import Control.Monad.Trans.Class (lift)
@@ -17,7 +17,7 @@ import Data.Foreign.Class (class Decode, class Encode)
 import Data.Foreign.Generic (decodeJSON, encodeJSON)
 import Data.Function.Uncurried (Fn2, runFn2)
 import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, bind, void, ($), (<<<))
+import Prelude (Unit, bind, void, ($), (<<<), (==), unit)
 
 foreign import data SOCKETIO :: Effect
 foreign import data Connection :: Type
@@ -64,10 +64,18 @@ connectToServer = liftEff <<< runEffFn1 connectToServerImpl
 ----------------------------------------------------------------------------------------
 ---- A PRODUCER OF MESSAGES OVER A CONNECTION
 ----------------------------------------------------------------------------------------
-foreign import createMessageEmitterImpl :: forall eff. EffFn4 (avar :: AVAR | eff) (Left String) (Right String) Connection (EmitFunction String Unit eff) Unit
+foreign import createMessageEmitterImpl :: forall eff. EffFn2 (avar :: AVAR | eff) Connection (String -> Eff (avar :: AVAR | eff) Unit) Unit
+
+-- createMessageEmitter :: forall eff. Connection -> Emitter String Unit eff
+-- createMessageEmitter = runEffFn4 createMessageEmitterImpl Left Right
 
 createMessageEmitter :: forall eff. Connection -> Emitter String Unit eff
-createMessageEmitter = runEffFn4 createMessageEmitterImpl Left Right
+createMessageEmitter connection emitfunction = runEffFn2 createMessageEmitterImpl connection cb
+  where
+    cb :: String -> Eff (avar :: AVAR | eff) Unit
+    cb s = if s == "shutdown"
+      then emitfunction $ Right unit
+      else emitfunction $ Left s
 
 messageProducer :: forall eff m. MonadAff (SocketEffects eff) m =>
   Connection -> Producer String m Unit
