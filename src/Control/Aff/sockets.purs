@@ -36,22 +36,31 @@ defaultTCPOptions = {port: 7777, host: "localhost", allowHalfOpen: false}
 -- type EmitFunction a r = (Either a r -> Effect Unit)
 type EmitFunction a r = CA.Emitter Effect a r
 type Emitter a r = EmitFunction a r -> Effect Unit
+-- Emitter a r = (CA.Emitter Effect a r) -> Effect Unit = (Step a r -> m Unit) -> Effect Unit (na unwrap)
 
 type Left a = a -> Either a Unit
-type Right a = Unit -> Either a Unit
+type Right a = Unit -> Either a Unit -- Step.Finish?
 
+
+-- x :: Either Int Unit
+-- x = Left 10
+--
+-- y :: Either Unit Int
+-- y = Right 10
+
+-- TODO. Hoogstwaarschijnlijk moet ik hier Step gebruiken in plaats van mijn zelfgemaakte 'Left' en 'Right'.
 foreign import createConnectionEmitterImpl :: forall opts.
-  EffectFn4 (Left Connection) (Right Connection) (TCPOptions opts) (EmitFunction Connection Unit) Unit
+  EffectFn4 (Connection -> Step Connection Unit) (Unit -> Step Connection Unit) (TCPOptions opts) (EmitFunction Connection Unit) Unit
 
 -- createConnectionEmitter :: forall eff. TCPOptions
   -- -> (EmitFunction Connection Unit eff) -> Eff (avar :: AVAR | eff) Unit
 createConnectionEmitter :: forall opts. TCPOptions opts -> Emitter Connection Unit
-createConnectionEmitter = runEffectFn4 createConnectionEmitterImpl Left Right
+createConnectionEmitter = runEffectFn4 createConnectionEmitterImpl Emit Finish -- dit moet Step en Finish worden, denk ik.
 
 -- A Producer for Connections.
 connectionProducer :: forall opts m. MonadAff m =>
   TCPOptions opts -> Producer Connection m Unit
-connectionProducer options = CA.produce' (createConnectionEmitter options)
+connectionProducer options = CA.produce' (createConnectionEmitter options) -- arg is recv
 
 ----------------------------------------------------------------------------------------
 ---- CONNECT TO SERVER

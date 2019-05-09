@@ -1,4 +1,4 @@
-function createConnectionEmitterImpl(left, right, options, emit)
+function createConnectionEmitterImpl(emitStep, finishStep, options, emit)
 {
   const server = require('net').createServer(options);
 
@@ -8,7 +8,7 @@ function createConnectionEmitterImpl(left, right, options, emit)
   server.on('connection',
     function(connection)
     {
-      emit( left(connection) )();
+      emit( emitStep(connection) )(); // left moet Step worden
     });
   server.on('error',
     function( error )
@@ -19,7 +19,7 @@ function createConnectionEmitterImpl(left, right, options, emit)
           // log or show that all connections are terminated and the server has fully ended.
         });
       // Finish the Producer.
-      emit(right({}))();
+      emit(finishStep({}))(); // right moet Finish worden.
     });
 }
 exports.createConnectionEmitterImpl = createConnectionEmitterImpl;
