@@ -7,7 +7,7 @@ import Control.Monad.Except (runExcept)
 import Control.Monad.Rec.Class (class MonadRec, forever)
 import Control.Monad.Trans.Class (lift)
 import Control.Parallel (class Parallel)
-import Data.Either (Either(..), fromRight)
+import Data.Either (Either, fromRight)
 import Data.Function.Uncurried (Fn2, runFn2)
 import Data.Newtype (unwrap)
 import Effect (Effect)
@@ -48,7 +48,6 @@ type Right a = Unit -> Either a Unit -- Step.Finish?
 -- y :: Either Unit Int
 -- y = Right 10
 
--- TODO. Hoogstwaarschijnlijk moet ik hier Step gebruiken in plaats van mijn zelfgemaakte 'Left' en 'Right'.
 foreign import createConnectionEmitterImpl :: forall opts.
   EffectFn4 (Connection -> Step Connection Unit) (Unit -> Step Connection Unit) (TCPOptions opts) (EmitFunction Connection Unit) Unit
 
