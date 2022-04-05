@@ -139,10 +139,10 @@ dataConsumer connection = forever do
   void $ lift $ writeData connection dt
 
 -- From a connection, produce instances of a. An uninformative error will be thrown if deserialisation fails.
-dataProducer_ :: forall a m f.
-  Decode a =>
-  MonadAff m =>
-  MonadRec m =>
-  Parallel f m =>
-  Connection -> Producer a m Unit
-dataProducer_ connection = (messageProducer connection) $~ (transform (unsafePartial $ fromRight <<< runExcept <<< decodeJSON))
+-- dataProducer_ :: forall a m f.
+--   Decode a =>
+--   MonadAff m =>
+--   MonadRec m =>
+--   Parallel f m =>
+--   Connection -> Producer a m Unit
+-- dataProducer_ connection = (messageProducer connection) $~ (transform (unsafePartial $ fromRight <<< runExcept <<< decodeJSON))
