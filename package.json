@@ -1,0 +1,20 @@
+{
+  "name": "purescript-aff-sockets",
+  "version": "2.2.2",
+  "description": "TCP Sockets based on the Node JS Net module in Aff.",
+  "license": "GPL-3.0-or-later",
+  "author": "Joop Ringelberg <joop.ringelberg@gmail.com>",
+  "dependencies": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/joopringelberg/purescript-aff-sockets.git#1.0.0"
+  },
+  "main": "src/Control/Aff/sockets.js",
+  "homepage": "https://github.com/joopringelberg/purescript-aff-sockets.git#readme",
+  "scripts": {
+  },
+  "devDependencies": {
+    "purescript-node-readline": "^3.1.0"
+  }
+}
